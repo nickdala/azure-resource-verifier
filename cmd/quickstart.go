@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/postgresql/armpostgresqlflexibleservers"
@@ -69,7 +70,18 @@ func init() {
 	rootCmd.AddCommand(quickstartCmd)
 
 	quickstartCmd.Flags().StringP("subscription-id", "s", "", "The Azure subscription id")
+	// Required
+	if err := quickstartCmd.MarkFlagRequired("subscription-id"); err != nil {
+		quickstartCmd.Printf("Error marking flag required: %s", err)
+		os.Exit(1)
+	}
+
 	quickstartCmd.Flags().StringArrayP("location", "l", []string{}, "The Azure location. Can be specified multiple times")
+	// Required
+	if err := quickstartCmd.MarkFlagRequired("location"); err != nil {
+		quickstartCmd.Printf("Error marking flag required: %s", err)
+		os.Exit(1)
+	}
 
 	// Here you will define your flags and configuration settings.
 
