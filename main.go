@@ -1,6 +1,5 @@
 /*
 Copyright © 2024 Nick Dalalelis
-
 */
 package main
 
