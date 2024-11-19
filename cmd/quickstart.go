@@ -12,6 +12,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/postgresql/armpostgresqlflexibleservers"
 	"github.com/nickdala/azure-resource-verifier/internal/cli"
+	"github.com/nickdala/azure-resource-verifier/internal/cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -38,6 +39,14 @@ func quickStartCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 	}
 
 	locations, err := cmd.Flags().GetStringArray("location")
+	azureLocationLocator := util.NewAzureLocationLocator(cred, ctx, subscriptionId)
+	l, err := azureLocationLocator.GetLocations()
+	if err != nil {
+		log.Printf("Error getting locations: %v", err)
+	} else {
+		log.Printf("Locations: %v", l)
+	}
+
 	if err != nil {
 		return cli.CreateAzrErr("Error parsing location flag", err)
 	}
