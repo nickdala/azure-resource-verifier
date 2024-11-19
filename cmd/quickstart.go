@@ -76,12 +76,10 @@ func init() {
 		os.Exit(1)
 	}
 
-	quickstartCmd.Flags().StringArrayP("location", "l", []string{}, "The Azure location. Can be specified multiple times")
-	// Required
-	if err := quickstartCmd.MarkFlagRequired("location"); err != nil {
-		quickstartCmd.Printf("Error marking flag required: %s", err)
-		os.Exit(1)
-	}
+	quickstartCmd.Flags().StringArrayP("location", "l", []string{}, "The Azure location to list the capabilities. Can be specified multiple times")
+	quickstartCmd.Flags().Bool("all-locations", false, "Whether to list capabilities for all locations")
+	quickstartCmd.MarkFlagsOneRequired("location", "all-locations")
+	quickstartCmd.MarkFlagsMutuallyExclusive("location", "all-locations")
 
 	// Here you will define your flags and configuration settings.
 
