@@ -14,6 +14,15 @@ type AzureLocationLocator struct {
 	subscriptionId string
 }
 
+type AzureLocation struct {
+	Name        string
+	DisplayName string
+}
+
+type AzureLocationList struct {
+	Value []*AzureLocation
+}
+
 func NewAzureLocationLocator(cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) *AzureLocationLocator {
 	return &AzureLocationLocator{
 		cred:           cred,
@@ -22,13 +31,15 @@ func NewAzureLocationLocator(cred *azidentity.DefaultAzureCredential, ctx contex
 	}
 }
 
-func (a *AzureLocationLocator) GetLocations() ([]string, error) {
+func (a *AzureLocationLocator) GetLocations() (*AzureLocationList, error) {
 	clientFactory, err := armsubscriptions.NewClientFactory(a.cred, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client: %v", err)
 	}
 
-	locations := []string{}
+	locations := &AzureLocationList{
+		Value: []*AzureLocation{},
+	}
 
 	pager := clientFactory.NewClient().NewListLocationsPager(a.subscriptionId, &armsubscriptions.ClientListLocationsOptions{IncludeExtendedLocations: nil})
 	for pager.More() {
@@ -38,7 +49,12 @@ func (a *AzureLocationLocator) GetLocations() ([]string, error) {
 		}
 
 		for _, location := range page.Value {
-			locations = append(locations, *location.Name)
+			azureLocation := &AzureLocation{
+				Name:        *location.Name,
+				DisplayName: *location.DisplayName,
+			}
+
+			locations.Value = append(locations.Value, azureLocation)
 		}
 	}
 	return locations, nil

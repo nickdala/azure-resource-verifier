@@ -91,9 +91,15 @@ func getLocations(cmd *cobra.Command, cred *azidentity.DefaultAzureCredential, c
 	}
 
 	azureLocationLocator := util.NewAzureLocationLocator(cred, ctx, subscriptionId)
-	locations, err = azureLocationLocator.GetLocations()
+	azureLocations, err := azureLocationLocator.GetLocations()
 	if err != nil {
 		return nil, err
+	}
+
+	azureLocationsLength := len(azureLocations.Value)
+	locations = make([]string, azureLocationsLength)
+	for i, location := range azureLocations.Value {
+		locations[i] = location.Name
 	}
 
 	return locations, nil

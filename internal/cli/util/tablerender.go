@@ -13,6 +13,7 @@ type Table struct {
 type TableLayout string
 
 const (
+	Locations        TableLayout = "locations"
 	SingleService    TableLayout = "single_service"
 	MultipleServices TableLayout = "multiple_services"
 )
@@ -21,6 +22,8 @@ func NewTable(layout TableLayout) *Table {
 	t := tablewriter.NewWriter(os.Stdout)
 
 	switch layout {
+	case Locations:
+		locationsLayout(t)
 	case SingleService:
 		singleServiceLayout(t)
 	case MultipleServices:
@@ -28,6 +31,10 @@ func NewTable(layout TableLayout) *Table {
 	}
 
 	return &Table{table: t}
+}
+
+func locationsLayout(t *tablewriter.Table) {
+	t.SetHeader([]string{"Name", "Display Name"})
 }
 
 func singleServiceLayout(t *tablewriter.Table) {
