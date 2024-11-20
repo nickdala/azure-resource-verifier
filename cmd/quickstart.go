@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/postgresql/armpostgresqlflexibleservers"
@@ -28,7 +29,7 @@ It will guide you through the process of creating a new configuration file and r
 }
 
 func quickStartCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultAzureCredential, ctx context.Context) error {
-	fmt.Println("quickstart called **")
+	fmt.Println("quickstart called")
 
 	subscriptionId := viper.GetString("subscription-id")
 	log.Printf("subscription-id: %s", subscriptionId)
@@ -38,41 +39,67 @@ func quickStartCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 		return cli.CreateAzrErr("failed to create client", err)
 	}
 
-	locations, err := cmd.Flags().GetStringArray("location")
-	azureLocationLocator := util.NewAzureLocationLocator(cred, ctx, subscriptionId)
-	l, err := azureLocationLocator.GetLocations()
-	if err != nil {
-		log.Printf("Error getting locations: %v", err)
-	} else {
-		log.Printf("Locations: %v", l)
-	}
-
+	locations, err := getLocations(cmd, cred, ctx, subscriptionId)
 	if err != nil {
 		return cli.CreateAzrErr("Error parsing location flag", err)
 	}
 
+	var data [][]string
+
 	for _, location := range locations {
 		pager := client.NewExecutePager(location, nil)
-		log.Printf("Listing capabilities for location %s", location)
+		log.Printf("Getting capabilities for location %s", location)
 		for pager.More() {
 			nextResult, err := pager.NextPage(ctx)
 			if err != nil {
-				return cli.CreateAzrErr("failed to get next page", err)
+				/*if azureErr, ok := err.(*exported.ResponseError); ok {
+					data = append(data, []string{location, "false", azureErr.ErrorCode})
+				} else {
+					data = append(data, []string{location, "false", err.Error()})
+				}*/
+				data = append(data, []string{location, "false", "false", err.Error()})
+				break
+				//return cli.CreateAzrErr("failed to get next page", err)
 			}
 
 			if len(nextResult.Value) == 0 {
-				log.Printf("no capabilities found")
+				data = append(data, []string{location, "false", "false", "can't deploy to this location"})
 				break
 			}
 
-			log.Println("Capabilities:")
+			//log.Println("Capabilities:")
 			for _, capability := range nextResult.Value {
-				log.Printf("Zone: %v Status: %v HA: %v\n", *capability.Zone, *capability.Status, *capability.ZoneRedundantHaSupported)
+				data = append(data, []string{location, "true", strconv.FormatBool(*capability.ZoneRedundantHaSupported), ""})
+				break // Only print the first capability
+				//log.Printf("Zone: %v Status: %v HA: %v\n", *capability.Zone, *capability.Status, *capability.ZoneRedundantHaSupported)
 			}
 		}
 	}
 
+	table := util.NewTable(util.SingleService)
+	table.AppendBulk(data)
+	table.Render()
+
 	return nil
+}
+
+func getLocations(cmd *cobra.Command, cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) ([]string, error) {
+	locations, err := cmd.Flags().GetStringArray("location")
+	if err != nil {
+		return nil, err
+	}
+
+	if len(locations) > 0 {
+		return locations, nil
+	}
+
+	azureLocationLocator := util.NewAzureLocationLocator(cred, ctx, subscriptionId)
+	locations, err = azureLocationLocator.GetLocations()
+	if err != nil {
+		return nil, err
+	}
+
+	return locations, nil
 }
 
 func init() {

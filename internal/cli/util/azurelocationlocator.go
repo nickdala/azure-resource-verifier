@@ -28,6 +28,8 @@ func (a *AzureLocationLocator) GetLocations() ([]string, error) {
 		return nil, fmt.Errorf("failed to create client: %v", err)
 	}
 
+	locations := []string{}
+
 	pager := clientFactory.NewClient().NewListLocationsPager(a.subscriptionId, &armsubscriptions.ClientListLocationsOptions{IncludeExtendedLocations: nil})
 	for pager.More() {
 		page, err := pager.NextPage(a.ctx)
@@ -36,11 +38,8 @@ func (a *AzureLocationLocator) GetLocations() ([]string, error) {
 		}
 
 		for _, location := range page.Value {
-			// You could use page here. We use blank identifier for just demo purposes.
-			fmt.Printf("Location: %s\n", *location.Name)
+			locations = append(locations, *location.Name)
 		}
 	}
-	return []string{
-		"eastus",
-	}, nil
+	return locations, nil
 }
