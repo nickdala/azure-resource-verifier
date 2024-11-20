@@ -19,25 +19,24 @@ import (
 	"github.com/spf13/viper"
 )
 
-// quickstartCmd represents the quickstart command
-var quickstartCmd = &cobra.Command{
-	Use:   "quickstart",
-	Short: "Quickstart azure-resource-verifier",
-	Long: `The quickstart command provide the means to quickly get started with azure-resource-verifier.
-It will guide you through the process of creating a new configuration file and running a verification.`,
+// postgresqlCmd represents the postgresql command
+var postgresqlCmd = &cobra.Command{
+	Use:   "postgresql",
+	Short: "Verify Azure PostgreSQL Flexible Server capabilities",
+	Long:  `The postgresql command provides the means to verify Azure PostgreSQL Flexible Server capabilities.`,
 
-	RunE: cli.AzureClientWrapRunE(quickStartCommand),
+	RunE: cli.AzureClientWrapRunE(postgresqlCommand),
 }
 
-func quickStartCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultAzureCredential, ctx context.Context) error {
-	fmt.Println("quickstart called")
+func postgresqlCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultAzureCredential, ctx context.Context) error {
+	fmt.Println("postgresql called")
 
 	subscriptionId := viper.GetString("subscription-id")
 	log.Printf("subscription-id: %s", subscriptionId)
 
 	client, err := armpostgresqlflexibleservers.NewLocationBasedCapabilitiesClient(subscriptionId, cred, nil)
 	if err != nil {
-		return cli.CreateAzrErr("failed to create client", err)
+		return cli.CreateAzrErr("failed to create the postgresql flexible server client", err)
 	}
 
 	locations, err := getLocations(cmd, cred, ctx, subscriptionId)
@@ -81,19 +80,19 @@ func quickStartCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 }
 
 func init() {
-	rootCmd.AddCommand(quickstartCmd)
+	rootCmd.AddCommand(postgresqlCmd)
 
-	quickstartCmd.Flags().StringP("subscription-id", "s", "", "The Azure subscription id")
+	postgresqlCmd.Flags().StringP("subscription-id", "s", "", "The Azure subscription id")
 	// Required
-	if err := quickstartCmd.MarkFlagRequired("subscription-id"); err != nil {
-		quickstartCmd.Printf("Error marking flag required: %s", err)
+	if err := postgresqlCmd.MarkFlagRequired("subscription-id"); err != nil {
+		postgresqlCmd.Printf("Error marking flag required: %s", err)
 		os.Exit(1)
 	}
 
-	quickstartCmd.Flags().StringArrayP("location", "l", []string{}, "The Azure location to list the capabilities. Can be specified multiple times")
-	quickstartCmd.Flags().Bool("all-locations", false, "Whether to list capabilities for all locations")
-	quickstartCmd.MarkFlagsOneRequired("location", "all-locations")
-	quickstartCmd.MarkFlagsMutuallyExclusive("location", "all-locations")
+	postgresqlCmd.Flags().StringArrayP("location", "l", []string{}, "The Azure location to list the capabilities. Can be specified multiple times")
+	postgresqlCmd.Flags().Bool("all-locations", false, "Whether to list capabilities for all locations")
+	postgresqlCmd.MarkFlagsOneRequired("location", "all-locations")
+	postgresqlCmd.MarkFlagsMutuallyExclusive("location", "all-locations")
 
 	// Here you will define your flags and configuration settings.
 
