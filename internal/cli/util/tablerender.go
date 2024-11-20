@@ -32,11 +32,13 @@ func NewTable(layout TableLayout) *Table {
 
 func singleServiceLayout(t *tablewriter.Table) {
 	t.SetHeader([]string{"Location", "Enabled", "HA Enabled", "Reason"})
+	t.SetAutoWrapText(true)
 }
 
 func multipleServiceLayout(t *tablewriter.Table) {
 	t.SetHeader([]string{"Service", "Location", "Enabled", "HA Enabled", "Reason"})
 	t.SetAutoMergeCellsByColumnIndex([]int{0})
+	t.SetAutoWrapText(true)
 }
 
 func (t *Table) SetHeader(header []string) {

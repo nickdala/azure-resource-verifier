@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/postgresql/armpostgresqlflexibleservers"
 	"github.com/nickdala/azure-resource-verifier/internal/cli"
@@ -52,14 +53,12 @@ func quickStartCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 		for pager.More() {
 			nextResult, err := pager.NextPage(ctx)
 			if err != nil {
-				/*if azureErr, ok := err.(*exported.ResponseError); ok {
-					data = append(data, []string{location, "false", azureErr.ErrorCode})
+				if azureErr, ok := err.(*azcore.ResponseError); ok {
+					data = append(data, []string{location, "false", "false", azureErr.ErrorCode})
 				} else {
-					data = append(data, []string{location, "false", err.Error()})
-				}*/
-				data = append(data, []string{location, "false", "false", err.Error()})
+					data = append(data, []string{location, "false", "false", err.Error()})
+				}
 				break
-				//return cli.CreateAzrErr("failed to get next page", err)
 			}
 
 			if len(nextResult.Value) == 0 {
@@ -67,11 +66,9 @@ func quickStartCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 				break
 			}
 
-			//log.Println("Capabilities:")
 			for _, capability := range nextResult.Value {
 				data = append(data, []string{location, "true", strconv.FormatBool(*capability.ZoneRedundantHaSupported), ""})
 				break // Only print the first capability
-				//log.Printf("Zone: %v Status: %v HA: %v\n", *capability.Zone, *capability.Status, *capability.ZoneRedundantHaSupported)
 			}
 		}
 	}
