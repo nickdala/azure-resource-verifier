@@ -30,15 +30,14 @@ func listLocationsCommand(cmd *cobra.Command, _ []string, cred *azidentity.Defau
 	subscriptionId := viper.GetString("subscription-id")
 	log.Printf("subscription-id: %s", subscriptionId)
 
-	azureLocationLocator := util.NewAzureLocationLocator(cred, ctx, subscriptionId)
-	locations, err := azureLocationLocator.GetLocations()
+	locations, err := getAllLocationsFromSubscription(cred, ctx, subscriptionId)
 	if err != nil {
 		return cli.CreateAzrErr("Error getting locations", err)
 	}
 
 	table := util.NewTable(util.Locations)
 
-	for _, location := range locations.Value {
+	for _, location := range locations {
 		table.AppendRow([]string{location.Name, location.DisplayName})
 	}
 

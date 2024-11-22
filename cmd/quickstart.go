@@ -8,13 +8,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/postgresql/armpostgresqlflexibleservers"
 	"github.com/nickdala/azure-resource-verifier/internal/cli"
-	"github.com/nickdala/azure-resource-verifier/internal/cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -34,48 +30,6 @@ func quickStartCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 
 	subscriptionId := viper.GetString("subscription-id")
 	log.Printf("subscription-id: %s", subscriptionId)
-
-	client, err := armpostgresqlflexibleservers.NewLocationBasedCapabilitiesClient(subscriptionId, cred, nil)
-	if err != nil {
-		return cli.CreateAzrErr("failed to create client", err)
-	}
-
-	locations, err := getLocations(cmd, cred, ctx, subscriptionId)
-	if err != nil {
-		return cli.CreateAzrErr("Error parsing location flag", err)
-	}
-
-	var data [][]string
-
-	for _, location := range locations {
-		pager := client.NewExecutePager(location, nil)
-		log.Printf("Getting capabilities for location %s", location)
-		for pager.More() {
-			nextResult, err := pager.NextPage(ctx)
-			if err != nil {
-				if azureErr, ok := err.(*azcore.ResponseError); ok {
-					data = append(data, []string{location, "false", "false", azureErr.ErrorCode})
-				} else {
-					data = append(data, []string{location, "false", "false", err.Error()})
-				}
-				break
-			}
-
-			if len(nextResult.Value) == 0 {
-				data = append(data, []string{location, "false", "false", "can't deploy to this location"})
-				break
-			}
-
-			for _, capability := range nextResult.Value {
-				data = append(data, []string{location, "true", strconv.FormatBool(*capability.ZoneRedundantHaSupported), ""})
-				break // Only print the first capability
-			}
-		}
-	}
-
-	table := util.NewTable(util.PostgreSqlService)
-	table.AppendBulk(data)
-	table.Render()
 
 	return nil
 }

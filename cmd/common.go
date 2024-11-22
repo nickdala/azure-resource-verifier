@@ -8,50 +8,53 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func getLocations(cmd *cobra.Command, cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) ([]string, error) {
+// This function is used to get the locations from the command line flags or from the Azure subscription
+// if the --location flag is not provided. If the --location flag is provided, the locations are filtered
+// based on the locations provided in the flag.
+func getLocations(cmd *cobra.Command, cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) ([]*util.AzureLocation, error) {
+
+	azureLocations, err := getAllLocationsFromSubscription(cred, ctx, subscriptionId)
+	if err != nil {
+		return nil, err
+	}
+
 	locations, err := cmd.Flags().GetStringArray("location")
 	if err != nil {
 		return nil, err
 	}
 
-	if len(locations) > 0 {
-		return locations, nil
+	// If the --location flag is not provided, return all locations
+	if len(locations) == 0 {
+		return azureLocations, nil
 	}
 
-	azureLocations, err := getAllLocationsFromSubscription(cred, ctx, subscriptionId)
-	if err != nil {
-		return nil, err
+	// Filter the locations based on the locations provided in the --location flag
+	// 1. Create a set of locations
+	locationSet := make(map[string]struct{})
+	for _, location := range locations {
+		locationSet[location] = struct{}{}
 	}
 
-	azureLocationsLength := len(azureLocations.Value)
-	locations = make([]string, azureLocationsLength)
-	for i, location := range azureLocations.Value {
-		locations[i] = location.Name
+	// 2. Create the filtered locations list
+	filteredLocations := make([]*util.AzureLocation, 0)
+
+	// 3. Iterate through the locations and add the location to the location set
+	for _, location := range azureLocations {
+		if _, ok := locationSet[location.Name]; ok {
+			filteredLocations = append(filteredLocations, location)
+		}
 	}
 
-	return locations, nil
+	return filteredLocations, nil
 }
 
-func getMapOfDisplayNamesToLocations(cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) (map[string]string, error) {
-	azureLocations, err := getAllLocationsFromSubscription(cred, ctx, subscriptionId)
-	if err != nil {
-		return nil, err
-	}
-
-	displayNameToLocation := make(map[string]string)
-	for _, location := range azureLocations.Value {
-		displayNameToLocation[location.DisplayName] = location.Name
-	}
-
-	return displayNameToLocation, nil
-}
-
-func getAllLocationsFromSubscription(cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) (*util.AzureLocationList, error) {
+// This function is used to get all the locations from the Azure subscription
+func getAllLocationsFromSubscription(cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) ([]*util.AzureLocation, error) {
 	azureLocationLocator := util.NewAzureLocationLocator(cred, ctx, subscriptionId)
 	azureLocations, err := azureLocationLocator.GetLocations()
 	if err != nil {
 		return nil, err
 	}
 
-	return azureLocations, nil
+	return azureLocations.Value, nil
 }

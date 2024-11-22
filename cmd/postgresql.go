@@ -47,26 +47,26 @@ func postgresqlCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 	var data [][]string
 
 	for _, location := range locations {
-		pager := client.NewExecutePager(location, nil)
-		log.Printf("Getting capabilities for location %s", location)
+		pager := client.NewExecutePager(location.Name, nil)
+		log.Printf("Getting capabilities for location %s", location.DisplayName)
 		for pager.More() {
 			nextResult, err := pager.NextPage(ctx)
 			if err != nil {
 				if azureErr, ok := err.(*azcore.ResponseError); ok {
-					data = append(data, []string{location, "false", "false", azureErr.ErrorCode})
+					data = append(data, []string{location.Name, location.DisplayName, "false", "false", azureErr.ErrorCode})
 				} else {
-					data = append(data, []string{location, "false", "false", err.Error()})
+					data = append(data, []string{location.Name, location.DisplayName, "false", "false", err.Error()})
 				}
 				break
 			}
 
 			if len(nextResult.Value) == 0 {
-				data = append(data, []string{location, "false", "false", "can't deploy to this location"})
+				data = append(data, []string{location.Name, location.DisplayName, "false", "false", "can't deploy to this location"})
 				break
 			}
 
 			for _, capability := range nextResult.Value {
-				data = append(data, []string{location, "true", strconv.FormatBool(*capability.ZoneRedundantHaSupported), ""})
+				data = append(data, []string{location.Name, location.DisplayName, "true", strconv.FormatBool(*capability.ZoneRedundantHaSupported), ""})
 				break // Only print the first capability
 			}
 		}
