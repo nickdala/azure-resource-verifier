@@ -7,6 +7,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.8.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appservice/armappservice/v4 v4.1.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/postgresql/armpostgresqlflexibleservers v1.1.0
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.1.1
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions v1.3.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/spf13/cobra v1.8.1

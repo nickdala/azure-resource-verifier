@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 )
@@ -41,8 +42,7 @@ func (a *AzureLocationLocator) GetLocations() (*AzureLocationList, error) {
 		Value: []*AzureLocation{},
 	}
 
-	inclExtendedLocations := false
-	pager := clientFactory.NewClient().NewListLocationsPager(a.subscriptionId, &armsubscriptions.ClientListLocationsOptions{IncludeExtendedLocations: &inclExtendedLocations})
+	pager := clientFactory.NewClient().NewListLocationsPager(a.subscriptionId, &armsubscriptions.ClientListLocationsOptions{IncludeExtendedLocations: to.Ptr(false)})
 	for pager.More() {
 		page, err := pager.NextPage(a.ctx)
 		if err != nil {

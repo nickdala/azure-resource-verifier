@@ -15,6 +15,7 @@ type TableLayout string
 const (
 	Locations         TableLayout = "locations"
 	PostgreSqlService TableLayout = "postgresql_service"
+	RedisService      TableLayout = "redis_service"
 	WebApp            TableLayout = "web_app"
 	MultipleServices  TableLayout = "multiple_services"
 )
@@ -29,11 +30,17 @@ func NewTable(layout TableLayout) *Table {
 		singleServiceLayout(t)
 	case WebApp:
 		webAppLayout(t)
+	case RedisService:
+		redisLayout(t)
 	case MultipleServices:
 		multipleServiceLayout(t)
 	}
 
 	return &Table{table: t}
+}
+
+func redisLayout(t *tablewriter.Table) {
+	t.SetHeader([]string{"Location", "Display Name", "Enabled"})
 }
 
 func webAppLayout(t *tablewriter.Table) {

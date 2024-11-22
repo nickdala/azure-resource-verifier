@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appservice/armappservice/v4"
 	"github.com/nickdala/azure-resource-verifier/internal/cli"
@@ -70,13 +71,11 @@ func appServiceCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 
 	geoRegionOptions := armappservice.WebSiteManagementClientListGeoRegionsOptions{}
 	if osType == "linux" {
-		linuxWorker := true
-		geoRegionOptions.LinuxWorkersEnabled = &linuxWorker
+		geoRegionOptions.LinuxWorkersEnabled = to.Ptr(true)
 	}
 
 	if publish == "container" && osType == "windows" {
-		container := true
-		geoRegionOptions.XenonWorkersEnabled = &container
+		geoRegionOptions.XenonWorkersEnabled = to.Ptr(true)
 	}
 
 	seenRegions := make(map[string]struct{})
