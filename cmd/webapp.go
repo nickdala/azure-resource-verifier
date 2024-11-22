@@ -58,17 +58,15 @@ func appServiceCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 		return cli.CreateAzrErr(fmt.Sprintf("Invalid publish type choice: %s", publish), nil)
 	}
 
-	clientFactory, err := armappservice.NewClientFactory(subscriptionId, cred, nil)
-	if err != nil {
-		return cli.CreateAzrErr("failed to create the app service client factory", err)
-	}
-
-	webSiteManagementClient := clientFactory.NewWebSiteManagementClient()
-
-	/*_, err := getLocations(cmd, cred, ctx, subscriptionId)
+	azureLocations, err := getLocations(cmd, cred, ctx, subscriptionId)
 	if err != nil {
 		return cli.CreateAzrErr("Error parsing location flag", err)
-	}*/
+	}
+
+	displayNameToLocation := make(map[string]string)
+	for _, location := range azureLocations {
+		displayNameToLocation[location.DisplayName] = location.Name
+	}
 
 	geoRegionOptions := armappservice.WebSiteManagementClientListGeoRegionsOptions{}
 	if osType == "linux" {
@@ -81,16 +79,18 @@ func appServiceCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 		geoRegionOptions.XenonWorkersEnabled = &container
 	}
 
-	allRegions, err := getMapOfDisplayNamesToLocations(cred, ctx, subscriptionId)
-	if err != nil {
-		return cli.CreateAzrErr("Error getting all regions", err)
-	}
-
 	seenRegions := make(map[string]struct{})
 
 	var data [][]string
 
+	clientFactory, err := armappservice.NewClientFactory(subscriptionId, cred, nil)
+	if err != nil {
+		return cli.CreateAzrErr("failed to create the app service client factory", err)
+	}
+
+	webSiteManagementClient := clientFactory.NewWebSiteManagementClient()
 	pager := webSiteManagementClient.NewListGeoRegionsPager(&geoRegionOptions)
+
 	for pager.More() {
 		nextResult, err := pager.NextPage(ctx)
 		if err != nil {
@@ -98,7 +98,7 @@ func appServiceCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 		}
 
 		for _, geoRegion := range nextResult.Value {
-			if regionName, ok := allRegions[*geoRegion.Properties.DisplayName]; ok {
+			if regionName, ok := displayNameToLocation[*geoRegion.Properties.DisplayName]; ok {
 				data = append(data, []string{regionName, *geoRegion.Properties.DisplayName, "true"})
 				seenRegions[*geoRegion.Properties.DisplayName] = struct{}{}
 			}
@@ -106,7 +106,7 @@ func appServiceCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 	}
 
 	// Now add the regions that were not returned by the API
-	for regionDisplayName, regionName := range allRegions {
+	for regionDisplayName, regionName := range displayNameToLocation {
 		if _, ok := seenRegions[regionDisplayName]; !ok {
 			data = append(data, []string{regionName, regionDisplayName, "false"})
 		}

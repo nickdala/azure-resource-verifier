@@ -41,7 +41,8 @@ func (a *AzureLocationLocator) GetLocations() (*AzureLocationList, error) {
 		Value: []*AzureLocation{},
 	}
 
-	pager := clientFactory.NewClient().NewListLocationsPager(a.subscriptionId, &armsubscriptions.ClientListLocationsOptions{IncludeExtendedLocations: nil})
+	inclExtendedLocations := false
+	pager := clientFactory.NewClient().NewListLocationsPager(a.subscriptionId, &armsubscriptions.ClientListLocationsOptions{IncludeExtendedLocations: &inclExtendedLocations})
 	for pager.More() {
 		page, err := pager.NextPage(a.ctx)
 		if err != nil {

@@ -45,7 +45,7 @@ func locationsLayout(t *tablewriter.Table) {
 }
 
 func singleServiceLayout(t *tablewriter.Table) {
-	t.SetHeader([]string{"Location", "Enabled", "HA Enabled", "Reason"})
+	t.SetHeader([]string{"Location", "Display Name", "Enabled", "HA Enabled", "Reason"})
 	t.SetAutoWrapText(true)
 }
 
