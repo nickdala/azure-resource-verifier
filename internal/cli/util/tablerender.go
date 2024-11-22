@@ -13,9 +13,10 @@ type Table struct {
 type TableLayout string
 
 const (
-	Locations        TableLayout = "locations"
-	SingleService    TableLayout = "single_service"
-	MultipleServices TableLayout = "multiple_services"
+	Locations         TableLayout = "locations"
+	PostgreSqlService TableLayout = "postgresql_service"
+	WebApp            TableLayout = "web_app"
+	MultipleServices  TableLayout = "multiple_services"
 )
 
 func NewTable(layout TableLayout) *Table {
@@ -24,13 +25,19 @@ func NewTable(layout TableLayout) *Table {
 	switch layout {
 	case Locations:
 		locationsLayout(t)
-	case SingleService:
+	case PostgreSqlService:
 		singleServiceLayout(t)
+	case WebApp:
+		webAppLayout(t)
 	case MultipleServices:
 		multipleServiceLayout(t)
 	}
 
 	return &Table{table: t}
+}
+
+func webAppLayout(t *tablewriter.Table) {
+	t.SetHeader([]string{"Location", "Display Name", "Enabled"})
 }
 
 func locationsLayout(t *tablewriter.Table) {

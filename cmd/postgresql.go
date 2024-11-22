@@ -72,7 +72,7 @@ func postgresqlCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 		}
 	}
 
-	table := util.NewTable(util.SingleService)
+	table := util.NewTable(util.PostgreSqlService)
 	table.AppendBulk(data)
 	table.Render()
 

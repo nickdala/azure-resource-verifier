@@ -18,8 +18,7 @@ func getLocations(cmd *cobra.Command, cred *azidentity.DefaultAzureCredential, c
 		return locations, nil
 	}
 
-	azureLocationLocator := util.NewAzureLocationLocator(cred, ctx, subscriptionId)
-	azureLocations, err := azureLocationLocator.GetLocations()
+	azureLocations, err := getAllLocationsFromSubscription(cred, ctx, subscriptionId)
 	if err != nil {
 		return nil, err
 	}
@@ -31,4 +30,28 @@ func getLocations(cmd *cobra.Command, cred *azidentity.DefaultAzureCredential, c
 	}
 
 	return locations, nil
+}
+
+func getMapOfDisplayNamesToLocations(cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) (map[string]string, error) {
+	azureLocations, err := getAllLocationsFromSubscription(cred, ctx, subscriptionId)
+	if err != nil {
+		return nil, err
+	}
+
+	displayNameToLocation := make(map[string]string)
+	for _, location := range azureLocations.Value {
+		displayNameToLocation[location.DisplayName] = location.Name
+	}
+
+	return displayNameToLocation, nil
+}
+
+func getAllLocationsFromSubscription(cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) (*util.AzureLocationList, error) {
+	azureLocationLocator := util.NewAzureLocationLocator(cred, ctx, subscriptionId)
+	azureLocations, err := azureLocationLocator.GetLocations()
+	if err != nil {
+		return nil, err
+	}
+
+	return azureLocations, nil
 }
