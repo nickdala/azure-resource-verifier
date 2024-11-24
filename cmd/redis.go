@@ -12,7 +12,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/nickdala/azure-resource-verifier/internal/cli"
-	"github.com/nickdala/azure-resource-verifier/internal/cli/util"
+	"github.com/nickdala/azure-resource-verifier/internal/table"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -75,7 +75,7 @@ func redisCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultAzureC
 		}
 	}
 
-	table := util.NewTable(util.RedisService)
+	table := table.NewTable(table.RedisService)
 	table.AppendBulk(data)
 	table.Render()
 

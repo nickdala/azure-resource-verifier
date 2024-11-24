@@ -11,7 +11,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/nickdala/azure-resource-verifier/internal/cli"
-	"github.com/nickdala/azure-resource-verifier/internal/cli/util"
+	"github.com/nickdala/azure-resource-verifier/internal/table"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -35,7 +35,7 @@ func listLocationsCommand(cmd *cobra.Command, _ []string, cred *azidentity.Defau
 		return cli.CreateAzrErr("Error getting locations", err)
 	}
 
-	table := util.NewTable(util.Locations)
+	table := table.NewTable(table.Locations)
 
 	for _, location := range locations {
 		table.AppendRow([]string{location.Name, location.DisplayName})

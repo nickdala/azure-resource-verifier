@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/nickdala/azure-resource-verifier/internal/cli/util"
+	azrazure "github.com/nickdala/azure-resource-verifier/internal/azure"
 	"github.com/spf13/cobra"
 )
 
 // This function is used to get the locations from the command line flags or from the Azure subscription
 // if the --location flag is not provided. If the --location flag is provided, the locations are filtered
 // based on the locations provided in the flag.
-func getLocations(cmd *cobra.Command, cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) ([]*util.AzureLocation, error) {
+func getLocations(cmd *cobra.Command, cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) ([]*azrazure.AzureLocation, error) {
 
 	azureLocations, err := getAllLocationsFromSubscription(cred, ctx, subscriptionId)
 	if err != nil {
@@ -36,7 +36,7 @@ func getLocations(cmd *cobra.Command, cred *azidentity.DefaultAzureCredential, c
 	}
 
 	// 2. Create the filtered locations list
-	filteredLocations := make([]*util.AzureLocation, 0)
+	filteredLocations := make([]*azrazure.AzureLocation, 0)
 
 	// 3. Iterate through the locations and add the location to the location set
 	for _, location := range azureLocations {
@@ -49,8 +49,8 @@ func getLocations(cmd *cobra.Command, cred *azidentity.DefaultAzureCredential, c
 }
 
 // This function is used to get all the locations from the Azure subscription
-func getAllLocationsFromSubscription(cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) ([]*util.AzureLocation, error) {
-	azureLocationLocator := util.NewAzureLocationLocator(cred, ctx, subscriptionId)
+func getAllLocationsFromSubscription(cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) ([]*azrazure.AzureLocation, error) {
+	azureLocationLocator := azrazure.NewAzureLocationLocator(cred, ctx, subscriptionId)
 	azureLocations, err := azureLocationLocator.GetLocations()
 	if err != nil {
 		return nil, err

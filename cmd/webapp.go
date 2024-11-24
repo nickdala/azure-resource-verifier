@@ -13,7 +13,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appservice/armappservice/v4"
 	"github.com/nickdala/azure-resource-verifier/internal/cli"
-	"github.com/nickdala/azure-resource-verifier/internal/cli/util"
+	"github.com/nickdala/azure-resource-verifier/internal/table"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -111,7 +111,7 @@ func appServiceCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 		}
 	}
 
-	table := util.NewTable(util.WebApp)
+	table := table.NewTable(table.WebApp)
 	table.AppendBulk(data)
 	table.Render()
 

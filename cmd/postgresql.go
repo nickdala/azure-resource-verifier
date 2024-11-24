@@ -14,7 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/postgresql/armpostgresqlflexibleservers"
 	"github.com/nickdala/azure-resource-verifier/internal/cli"
-	"github.com/nickdala/azure-resource-verifier/internal/cli/util"
+	"github.com/nickdala/azure-resource-verifier/internal/table"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -72,7 +72,7 @@ func postgresqlCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 		}
 	}
 
-	table := util.NewTable(util.PostgreSqlService)
+	table := table.NewTable(table.PostgreSqlService)
 	table.AppendBulk(data)
 	table.Render()
 
