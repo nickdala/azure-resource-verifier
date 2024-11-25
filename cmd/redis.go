@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
+	"github.com/nickdala/azure-resource-verifier/internal/azure"
 	"github.com/nickdala/azure-resource-verifier/internal/cli"
 	"github.com/nickdala/azure-resource-verifier/internal/table"
 	"github.com/spf13/cobra"
@@ -29,40 +29,24 @@ func redisCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultAzureC
 	subscriptionId := viper.GetString("subscription-id")
 	log.Printf("subscription-id: %s", subscriptionId)
 
-	clientFactory, err := armresources.NewClientFactory(subscriptionId, cred, nil)
-	if err != nil {
-		return cli.CreateAzrErr("failed to create the arm resource client factory", err)
-	}
-
-	res, err := clientFactory.NewProvidersClient().Get(ctx, "Microsoft.Cache", &armresources.ProvidersClientGetOptions{Expand: nil})
-	if err != nil {
-		return cli.CreateAzrErr("failed to get the cache provider", err)
-	}
-
-	redisLocations, err := getRedisLocations(&res.Provider)
-	if err != nil {
-		return cli.CreateAzrErr("failed to get the Azure Cache for Redis locations", err)
-	}
-
 	azureLocations, err := getLocations(cmd, cred, ctx, subscriptionId)
 	if err != nil {
 		return cli.CreateAzrErr("Error parsing location flag", err)
 	}
 
-	displayNameToLocation := make(map[string]string)
-	for _, location := range azureLocations {
-		displayNameToLocation[location.DisplayName] = location.Name
+	redisCache := azure.NewAzureRedisCache(cred, ctx, subscriptionId)
+	redisLocations, err := redisCache.GetRedisLocations()
+	if err != nil {
+		return cli.CreateAzrErr("Error getting Redis locations", err)
 	}
 
 	seenRegions := make(map[string]struct{})
 
 	var data [][]string
 
-	for _, location := range redisLocations {
-		if regionName, ok := displayNameToLocation[*location]; ok {
-			seenRegions[*location] = struct{}{}
-			data = append(data, []string{regionName, *location, "true"})
-		}
+	for _, location := range redisLocations.Value {
+		seenRegions[*&location.Name] = struct{}{}
+		data = append(data, []string{location.Name, location.DisplayName, "true"})
 	}
 
 	// Now add the regions that were not returned by the API
@@ -77,32 +61,6 @@ func redisCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultAzureC
 	table.Render()
 
 	return nil
-}
-
-func getRedisLocations(provider *armresources.Provider) ([]*string, error) {
-	if provider.ResourceTypes == nil {
-		return nil, cli.CreateAzrErr("failed to get the cache provider resource types", nil)
-	}
-
-	for _, resourceType := range provider.ResourceTypes {
-		if resourceType.ResourceType == nil {
-			//log.Printf("Skipping resource type with nil ResourceType")
-			continue
-		}
-
-		// We're looking for locations for Redis
-		if *resourceType.ResourceType != "Redis" {
-			continue
-		}
-
-		if resourceType.Locations == nil {
-			continue
-		}
-
-		return resourceType.Locations, nil
-	}
-
-	return nil, cli.CreateAzrErr("No Redis locations found", nil)
 }
 
 func init() {

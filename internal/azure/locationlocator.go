@@ -15,15 +15,6 @@ type AzureLocationLocator struct {
 	subscriptionId string
 }
 
-type AzureLocation struct {
-	Name        string
-	DisplayName string
-}
-
-type AzureLocationList struct {
-	Value []*AzureLocation
-}
-
 func NewAzureLocationLocator(cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) *AzureLocationLocator {
 	return &AzureLocationLocator{
 		cred:           cred,
