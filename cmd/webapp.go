@@ -9,9 +9,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appservice/armappservice/v4"
+	"github.com/nickdala/azure-resource-verifier/internal/azure"
 	"github.com/nickdala/azure-resource-verifier/internal/cli"
 	"github.com/nickdala/azure-resource-verifier/internal/table"
 	"github.com/spf13/cobra"
@@ -21,14 +20,14 @@ import (
 var (
 	webAppOperatingSystemChoice = cli.CliChoice{
 		Name:        "operating-system",
-		Description: "The operating system of the web app",
+		Description: "The operating system of the web app (linux or windows)",
 		Default:     "linux",
 		Choices:     []string{"linux", "windows"},
 	}
 
 	publishType = cli.CliChoice{
 		Name:        "publish-type",
-		Description: "The publish type of the web app",
+		Description: "The publish type of the web app (code or container)",
 		Default:     "code",
 		Choices:     []string{"code", "container"},
 	}
@@ -49,9 +48,9 @@ func appServiceCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 	subscriptionId := viper.GetString("subscription-id")
 	log.Printf("subscription-id: %s", subscriptionId)
 
-	osType := viper.GetString(webAppOperatingSystemChoice.Name)
-	if valid := webAppOperatingSystemChoice.IsValidChoice(osType); !valid {
-		return cli.CreateAzrErr(fmt.Sprintf("Invalid operating system choice: %s", osType), nil)
+	os := viper.GetString(webAppOperatingSystemChoice.Name)
+	if valid := webAppOperatingSystemChoice.IsValidChoice(os); !valid {
+		return cli.CreateAzrErr(fmt.Sprintf("Invalid operating system choice: %s", os), nil)
 	}
 
 	publish := viper.GetString(publishType.Name)
@@ -59,55 +58,40 @@ func appServiceCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 		return cli.CreateAzrErr(fmt.Sprintf("Invalid publish type choice: %s", publish), nil)
 	}
 
+	osType, err := azure.AppServiceOSFromString(os)
+	if err != nil {
+		return cli.CreateAzrErr("Error parsing operating system flag", err)
+	}
+
+	publishType, err := azure.AppServicePublishTypeFromString(publish)
+	if err != nil {
+		return cli.CreateAzrErr("Error parsing publish type flag", err)
+	}
+
 	azureLocations, err := getLocations(cmd, cred, ctx, subscriptionId)
 	if err != nil {
 		return cli.CreateAzrErr("Error parsing location flag", err)
 	}
 
-	displayNameToLocation := make(map[string]string)
-	for _, location := range azureLocations {
-		displayNameToLocation[location.DisplayName] = location.Name
+	azureAppService := azure.NewAzureAppService(cred, ctx, subscriptionId)
+	appServiceLocations, err := azureAppService.GetAppServiceLocations(azureLocations, osType, publishType)
+	if err != nil {
+		return cli.CreateAzrErr("Error getting App Service locations", err)
 	}
-
-	geoRegionOptions := armappservice.WebSiteManagementClientListGeoRegionsOptions{}
-	if osType == "linux" {
-		geoRegionOptions.LinuxWorkersEnabled = to.Ptr(true)
-	}
-
-	if publish == "container" && osType == "windows" {
-		geoRegionOptions.XenonWorkersEnabled = to.Ptr(true)
-	}
-
-	seenRegions := make(map[string]struct{})
 
 	var data [][]string
 
-	clientFactory, err := armappservice.NewClientFactory(subscriptionId, cred, nil)
-	if err != nil {
-		return cli.CreateAzrErr("failed to create the app service client factory", err)
-	}
+	seenRegions := make(map[string]struct{})
 
-	webSiteManagementClient := clientFactory.NewWebSiteManagementClient()
-	pager := webSiteManagementClient.NewListGeoRegionsPager(&geoRegionOptions)
-
-	for pager.More() {
-		nextResult, err := pager.NextPage(ctx)
-		if err != nil {
-			break
-		}
-
-		for _, geoRegion := range nextResult.Value {
-			if regionName, ok := displayNameToLocation[*geoRegion.Properties.DisplayName]; ok {
-				data = append(data, []string{regionName, *geoRegion.Properties.DisplayName, "true"})
-				seenRegions[*geoRegion.Properties.DisplayName] = struct{}{}
-			}
-		}
+	for _, location := range appServiceLocations.Value {
+		data = append(data, []string{location.Name, location.DisplayName, "true"})
+		seenRegions[location.Name] = struct{}{}
 	}
 
 	// Now add the regions that were not returned by the API
-	for regionDisplayName, regionName := range displayNameToLocation {
-		if _, ok := seenRegions[regionDisplayName]; !ok {
-			data = append(data, []string{regionName, regionDisplayName, "false"})
+	for _, location := range azureLocations.Value {
+		if _, ok := seenRegions[location.Name]; !ok {
+			data = append(data, []string{location.Name, location.DisplayName, "false"})
 		}
 	}
 

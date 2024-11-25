@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/postgresql/armpostgresqlflexibleservers"
+	"github.com/nickdala/azure-resource-verifier/internal/azure"
 	"github.com/nickdala/azure-resource-verifier/internal/cli"
 	"github.com/nickdala/azure-resource-verifier/internal/table"
 	"github.com/spf13/cobra"
@@ -31,11 +29,6 @@ func postgresqlCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 	subscriptionId := viper.GetString("subscription-id")
 	log.Printf("subscription-id: %s", subscriptionId)
 
-	client, err := armpostgresqlflexibleservers.NewLocationBasedCapabilitiesClient(subscriptionId, cred, nil)
-	if err != nil {
-		return cli.CreateAzrErr("failed to create the postgresql flexible server client", err)
-	}
-
 	locations, err := getLocations(cmd, cred, ctx, subscriptionId)
 	if err != nil {
 		return cli.CreateAzrErr("Error parsing location flag", err)
@@ -43,30 +36,23 @@ func postgresqlCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultA
 
 	var data [][]string
 
-	for _, location := range locations {
-		pager := client.NewExecutePager(location.Name, nil)
-		log.Printf("Getting capabilities for location %s", location.DisplayName)
-		for pager.More() {
-			nextResult, err := pager.NextPage(ctx)
-			if err != nil {
-				if azureErr, ok := err.(*azcore.ResponseError); ok {
-					data = append(data, []string{location.Name, location.DisplayName, "false", "false", azureErr.ErrorCode})
-				} else {
-					data = append(data, []string{location.Name, location.DisplayName, "false", "false", err.Error()})
-				}
-				break
-			}
+	azurePostgresql := azure.NewAzurePostgresqlFlexibleServer(cred, ctx, subscriptionId)
 
-			if len(nextResult.Value) == 0 {
-				data = append(data, []string{location.Name, location.DisplayName, "false", "false", "can't deploy to this location"})
-				break
-			}
+	postgresLocations, postgresqlHaLocations, postgresqlNonDeployable, err := azurePostgresql.GetPostgresqlLocations(locations)
+	if err != nil {
+		return cli.CreateAzrErr("Error getting PostgreSQL locations", err)
+	}
 
-			for _, capability := range nextResult.Value {
-				data = append(data, []string{location.Name, location.DisplayName, "true", strconv.FormatBool(*capability.ZoneRedundantHaSupported), ""})
-				break // Only print the first capability
-			}
-		}
+	for _, location := range postgresLocations.Value {
+		data = append(data, []string{location.Name, location.DisplayName, "true", "false", ""})
+	}
+
+	for _, location := range postgresqlHaLocations.Value {
+		data = append(data, []string{location.Name, location.DisplayName, "true", "true", ""})
+	}
+
+	for _, location := range postgresqlNonDeployable.Value {
+		data = append(data, []string{location.Name, location.DisplayName, "false", "false", location.Reason})
 	}
 
 	table := table.NewTable(table.PostgreSqlService)

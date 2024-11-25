@@ -40,20 +40,17 @@ func redisCommand(cmd *cobra.Command, _ []string, cred *azidentity.DefaultAzureC
 		return cli.CreateAzrErr("Error getting Redis locations", err)
 	}
 
-	seenRegions := make(map[string]struct{})
+	deployableLocations := azureLocations.Intersection(redisLocations)
+	unsupportedRegions := azureLocations.Difference(redisLocations)
 
 	var data [][]string
 
-	for _, location := range redisLocations.Value {
-		seenRegions[*&location.Name] = struct{}{}
+	for _, location := range deployableLocations.Value {
 		data = append(data, []string{location.Name, location.DisplayName, "true"})
 	}
 
-	// Now add the regions that were not returned by the API
-	for regionDisplayName, regionName := range displayNameToLocation {
-		if _, ok := seenRegions[regionDisplayName]; !ok {
-			data = append(data, []string{regionName, regionDisplayName, "false"})
-		}
+	for _, location := range unsupportedRegions.Value {
+		data = append(data, []string{location.Name, location.DisplayName, "false"})
 	}
 
 	table := table.NewTable(table.RedisService)

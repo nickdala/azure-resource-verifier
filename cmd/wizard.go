@@ -117,7 +117,7 @@ func getPostgresLocations(subscriptionId string, cred *azidentity.DefaultAzureCr
 	return locations, nil
 }
 
-func getRedisLocations(subscriptionId string, cred *azidentity.DefaultAzureCredential, ctx context.Context, filter []*azrazure.AzureLocation) ([]*azrazure.AzureLocation, error) {
+func getRedisLocations2(subscriptionId string, cred *azidentity.DefaultAzureCredential, ctx context.Context, filter []*azrazure.AzureLocation) ([]*azrazure.AzureLocation, error) {
 	locations := make([]*azrazure.AzureLocation, 0)
 
 	return locations, nil

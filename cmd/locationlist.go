@@ -34,7 +34,7 @@ func listLocationsCommand(cmd *cobra.Command, _ []string, cred *azidentity.Defau
 
 	table := table.NewTable(table.Locations)
 
-	for _, location := range locations {
+	for _, location := range locations.Value {
 		table.AppendRow([]string{location.Name, location.DisplayName})
 	}
 

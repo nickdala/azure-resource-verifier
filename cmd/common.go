@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	azrazure "github.com/nickdala/azure-resource-verifier/internal/azure"
+	"github.com/nickdala/azure-resource-verifier/internal/azure"
 	"github.com/spf13/cobra"
 )
 
 // This function is used to get the locations from the command line flags or from the Azure subscription
 // if the --location flag is not provided. If the --location flag is provided, the locations are filtered
 // based on the locations provided in the flag.
-func getLocations(cmd *cobra.Command, cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) ([]*azrazure.AzureLocation, error) {
+func getLocations(cmd *cobra.Command, cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) (*azure.AzureLocationList, error) {
 
 	azureLocations, err := getAllLocationsFromSubscription(cred, ctx, subscriptionId)
 	if err != nil {
@@ -36,25 +36,25 @@ func getLocations(cmd *cobra.Command, cred *azidentity.DefaultAzureCredential, c
 	}
 
 	// 2. Create the filtered locations list
-	filteredLocations := make([]*azrazure.AzureLocation, 0)
+	filteredLocations := make([]*azure.AzureLocation, 0)
 
 	// 3. Iterate through the locations and add the location to the location set
-	for _, location := range azureLocations {
+	for _, location := range azureLocations.Value {
 		if _, ok := locationSet[location.Name]; ok {
 			filteredLocations = append(filteredLocations, location)
 		}
 	}
 
-	return filteredLocations, nil
+	return &azure.AzureLocationList{Value: filteredLocations}, nil
 }
 
 // This function is used to get all the locations from the Azure subscription
-func getAllLocationsFromSubscription(cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) ([]*azrazure.AzureLocation, error) {
-	azureLocationLocator := azrazure.NewAzureLocationLocator(cred, ctx, subscriptionId)
+func getAllLocationsFromSubscription(cred *azidentity.DefaultAzureCredential, ctx context.Context, subscriptionId string) (*azure.AzureLocationList, error) {
+	azureLocationLocator := azure.NewAzureLocationLocator(cred, ctx, subscriptionId)
 	azureLocations, err := azureLocationLocator.GetLocations()
 	if err != nil {
 		return nil, err
 	}
 
-	return azureLocations.Value, nil
+	return azureLocations, nil
 }
