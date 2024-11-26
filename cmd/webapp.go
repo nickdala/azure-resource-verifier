@@ -118,18 +118,7 @@ func init() {
 	webAppCmd.MarkFlagsMutuallyExclusive("location", "all-locations")
 
 	webAppCmd.Flags().StringP(webAppOperatingSystemChoice.Name, "o", webAppOperatingSystemChoice.Default, webAppOperatingSystemChoice.Description)
-	// Required
-	if err := webAppCmd.MarkFlagRequired(webAppOperatingSystemChoice.Name); err != nil {
-		webAppCmd.Printf("Error marking flag required: %s", err)
-		os.Exit(1)
-	}
-
 	webAppCmd.Flags().StringP(publishType.Name, "p", publishType.Default, publishType.Description)
-	// Required
-	if err := webAppCmd.MarkFlagRequired(publishType.Name); err != nil {
-		webAppCmd.Printf("Error marking flag required: %s", err)
-		os.Exit(1)
-	}
 
 	// Here you will define your flags and configuration settings.
 
