@@ -25,3 +25,5 @@ go.work.sum
 .env
 
 azure-resource-verifier
+
+dist/
