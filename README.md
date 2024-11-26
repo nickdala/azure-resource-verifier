@@ -1,25 +1,21 @@
 # Azure Resource Verifier
 
-## Development
+This tool is used to verify Azure resources can be deployed to a region in a subscription. It is intended to be used as a pre-deployment check.
 
-1. Initialize
-    * `go mod init github.com/nickdala/azure-verifier`
-    * `go mod tidy`
+## Features
 
-1. Go Modules
-    * go get github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/postgresql/armpostgresqlflexibleservers
-    * go get -u github.com/Azure/azure-sdk-for-go/sdk/azidentity
+The following features are supported:
 
-Major Version Upgrade
+- Get a list of regions that are available in a subscription
+- Verify that Azure Cache for Redis can be deployed to a region
+- Verify that Azure Database for PostgreSQL Flexible Server can be deployed to a region
+- Verify that Azure App Service can be deployed to a region
 
-Go uses semantic import versioning to ensure a good backward compatibility for modules. For Azure Go management SDK, we usually upgrade module version according to the corresponding service's API version. Regarding it could be a complicated experience for major version upgrade, we will try our best to keep the SDK API stable and release new version in backward compatible way. However, if any unavoidable breaking changes and a new major version releases for SDK modules, you could use these commands under your module folder to upgrade:
+## Prerequisites
 
-```
- go install github.com/icholy/gomajor@latest
- gomajor get github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appservice/armappservice@latest
- ```
+- [Go 1.23](https://golang.org/dl/)
+- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 
- Reference: [armappservice](https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appservice/armappservice/v4#section-readme)
 
 ## Setup
 
