@@ -4,7 +4,10 @@
     "features": {
         "ghcr.io/devcontainers/features/go:1": {
             "version": "1.23"
-        }
+        },
+        "ghcr.io/devcontainers/features/azure-cli:1": {
+			"version": "latest"
+		}
     },
     "customizations": {
         "vscode": {
