@@ -28,9 +28,15 @@ The following features are supported:
 
 There are many ways to get started with the *Azure Resource Verifier*.
 
-### Download the latest release
+### go install
 
-The simplest way is to install *Azure Resource Verifier* is to download the latest release from a [prebuilt binary](https://github.com/nickdala/azure-resource-verifier/releases).
+You can install the *Azure Resource Verifier* using the `go install` command.
+
+```
+go install github.com/nickdala/azure-resource-verifier@latest
+```
+
+This will install the *Azure Resource Verifier* in your `$GOPATH/bin` directory.
 
 ### Build from Source
 

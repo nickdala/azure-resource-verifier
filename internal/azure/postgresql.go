@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -42,71 +43,99 @@ func (a *AzurePostgresqlFlexibleServer) GetPostgresqlLocations(locations *AzureL
 		return nil, nil, nil, fmt.Errorf("failed to create the postgresql flexible server client %w", err)
 	}
 
-	deployableLocations := &AzurePostgresqlLocationList{
-		Value: []*AzureLocation{},
-	}
+	// The following is used to store locations from our go routine.
+	// We will merge the results after all go routines are done.
+	deployableLocations := make([]*AzureLocation, len(locations.Value))
+	haLocations := make([]*AzureLocation, len(locations.Value))
+	nonDeployableLocations := make([]*AzurePostgresqlNonDeployableLocation, len(locations.Value))
 
-	haLocations := &AzurePostgresqlHaLocationList{
-		Value: []*AzureLocation{},
-	}
+	var wg sync.WaitGroup
+	for i, location := range locations.Value {
+		wg.Add(1)
+		go func(idx int, azureLocation *AzureLocation) {
+			defer wg.Done()
+			pager := client.NewExecutePager(azureLocation.Name, nil)
+			log.Printf("Getting capabilities for location %s", azureLocation.DisplayName)
+			for pager.More() {
+				nextResult, err := pager.NextPage(a.ctx)
+				if err != nil {
+					if azureErr, ok := err.(*azcore.ResponseError); ok {
+						nonDeployableLocations[idx] =
+							&AzurePostgresqlNonDeployableLocation{
+								Name:        location.Name,
+								DisplayName: location.DisplayName,
+								Reason:      azureErr.ErrorCode,
+							}
+					} else {
+						nonDeployableLocations[idx] =
+							&AzurePostgresqlNonDeployableLocation{
+								Name:        location.Name,
+								DisplayName: location.DisplayName,
+								Reason:      err.Error(),
+							}
+					}
+					break
+				}
 
-	nonDeployableLocations := &AzurePostgresqlNonDeployableLocationList{
-		Value: []*AzurePostgresqlNonDeployableLocation{},
-	}
-
-	for _, location := range locations.Value {
-		pager := client.NewExecutePager(location.Name, nil)
-		log.Printf("Getting capabilities for location %s", location.DisplayName)
-		for pager.More() {
-			nextResult, err := pager.NextPage(a.ctx)
-			if err != nil {
-				if azureErr, ok := err.(*azcore.ResponseError); ok {
-					nonDeployableLocations.Value = append(nonDeployableLocations.Value,
+				if len(nextResult.Value) == 0 {
+					nonDeployableLocations[idx] =
 						&AzurePostgresqlNonDeployableLocation{
 							Name:        location.Name,
 							DisplayName: location.DisplayName,
-							Reason:      azureErr.ErrorCode,
-						})
-				} else {
-					nonDeployableLocations.Value = append(nonDeployableLocations.Value,
-						&AzurePostgresqlNonDeployableLocation{
-							Name:        location.Name,
-							DisplayName: location.DisplayName,
-							Reason:      err.Error(),
-						})
+							Reason:      "can't deploy to this location",
+						}
+					break
 				}
-				break
-			}
 
-			if len(nextResult.Value) == 0 {
-				nonDeployableLocations.Value = append(nonDeployableLocations.Value,
-					&AzurePostgresqlNonDeployableLocation{
-						Name:        location.Name,
-						DisplayName: location.DisplayName,
-						Reason:      "can't deploy to this location",
-					})
-				break
-			}
+				// We have the capabilities for the location.
+				// You can at least deploy PostgreSQL Flexible Server to this location.
+				// Check if the location supports HA.
+				haEnabled := false
+				for _, capability := range nextResult.Value {
+					if *capability.ZoneRedundantHaSupported {
+						haLocations[idx] = location
+						haEnabled = true
+						break // Only need confirmation for one capability for HA
+					}
+				}
 
-			// We have the capabilities for the location.
-			// You can at least deploy PostgreSQL Flexible Server to this location.
-			// Check if the location supports HA.
-			haEnabled := false
-			for _, capability := range nextResult.Value {
-				if *capability.ZoneRedundantHaSupported {
-					haLocations.Value = append(haLocations.Value, location)
-					haEnabled = true
-					break // Only need confirmation for one capability for HA
+				// HA is not supported in this location. Add to the deployable list.
+				if !haEnabled {
+					deployableLocations[idx] = location
+					break
 				}
 			}
+		}(i, location)
+	}
 
-			// HA is not supported in this location. Add to the deployable list.
-			if !haEnabled {
-				deployableLocations.Value = append(deployableLocations.Value, location)
-				break
-			}
+	wg.Wait()
+
+	// Remove nil values from the deployable and ha locations.
+	deployableLocations = removeNilItems(deployableLocations)
+	haLocations = removeNilItems(haLocations)
+	nonDeployableLocations = removeNilItems(nonDeployableLocations)
+
+	deployableLocationList := &AzurePostgresqlLocationList{
+		Value: deployableLocations,
+	}
+
+	haLocationList := &AzurePostgresqlHaLocationList{
+		Value: haLocations,
+	}
+
+	nonDeployableLocationList := &AzurePostgresqlNonDeployableLocationList{
+		Value: nonDeployableLocations,
+	}
+
+	return deployableLocationList, haLocationList, nonDeployableLocationList, nil
+}
+
+func removeNilItems[T any](items []*T) []*T {
+	var result []*T
+	for _, item := range items {
+		if item != nil {
+			result = append(result, item)
 		}
 	}
-
-	return deployableLocations, haLocations, nonDeployableLocations, nil
+	return result
 }
