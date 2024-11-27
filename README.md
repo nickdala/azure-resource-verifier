@@ -30,7 +30,7 @@ There are many ways to get started with the *Azure Resource Verifier*.
 
 ### Download the latest release
 
-The simplest way is to install *Azure Resource Verifier* is to download the latest release from [azure-resource-verifier/releases](https://github.com/nickdala/azure-resource-verifier/releases).
+The simplest way is to install *Azure Resource Verifier* is to download the latest release from a [prebuilt binary](https://github.com/nickdala/azure-resource-verifier/releases).
 
 ### Build from Source
 
