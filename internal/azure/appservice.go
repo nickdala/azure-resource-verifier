@@ -23,11 +23,6 @@ const (
 	Linux
 )
 
-// Implement string method for AppServiceOS
-func (os AppServiceOS) String() string {
-	return [...]string{"Windows", "Linux"}[os]
-}
-
 // Implement AppServiceOSFromString method
 func AppServiceOSFromString(os string) (AppServiceOS, error) {
 	switch os {
@@ -46,11 +41,6 @@ const (
 	Code AppServicePublishType = iota
 	Container
 )
-
-// Implement string method for AppServicePublishType
-func (pt AppServicePublishType) String() string {
-	return [...]string{"Code", "Container"}[pt]
-}
 
 // Implement AppServicePublishTypeFromString method
 func AppServicePublishTypeFromString(publishType string) (AppServicePublishType, error) {
