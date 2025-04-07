@@ -1,0 +1,16 @@
+{
+    "servers": {
+        "azr-server-e27e8d37": {
+            "type": "stdio",
+            "command": "<path-to-azure-resource-verifier>",
+            "args": [
+                "mcp",
+                "--log-file",
+                "<path-to-log-file>",
+            ],
+            "env": {
+                "AZURE_SUBSCRIPTION_ID": "<your-subscription-id>"
+            }
+        }
+    }
+}
