@@ -11,6 +11,19 @@
             "mode": "debug",
             "program": "main.go",
             "args": ["quickstart"]
+        },
+        {
+            "name": "Launch MCP Server",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "main.go",
+            "args": [
+                "mcp"
+            ],
+            "env": {
+                "AZURE_SUBSCRIPTION_ID": ""
+            }
         }
 
     ]

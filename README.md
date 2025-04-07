@@ -57,7 +57,7 @@ There are many ways to get started with the *Azure Resource Verifier*.
 
   ![DevContainer](images/devcontainer.png)
 
-## Running Azure Resource Verifier
+## Log into Azure
 
 You must first be authenticated to Azure and have the appropriate subscription selected. Install the [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) and run the following command to authenticate:
 
@@ -70,6 +70,31 @@ If you have multiple tenants, you can use the following command to log into the 
 ```
 az login --tenant <tenant-id>
 ```
+
+## Running Azure Resource Verifier (MCP)
+
+```json
+"mcp": {
+        "servers": {
+            "azr-mcp-server-51535a5f": {
+                "type": "stdio",
+                "command": "<path to azure-resource-verifier>",
+                "args": [
+                    "mcp",
+                    "--log-file",
+                    "<path to log file>"
+                ],
+                "env": {
+                    "AZURE_SUBSCRIPTION_ID": "<your-subscription-id>",
+                }
+            }
+        }
+    }
+```
+
+## Running Azure Resource Verifier (CLI)
+
+
 
 Once logged in, you can issue the following commands.
 

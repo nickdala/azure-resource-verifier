@@ -1,12 +1,12 @@
 package azure
 
 type AzureLocation struct {
-	Name        string
-	DisplayName string
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName"`
 }
 
 type AzureLocationList struct {
-	Value []*AzureLocation
+	Value []*AzureLocation `json:"value"`
 }
 
 func (list *AzureLocationList) Intersection(other *AzureLocationList) *AzureLocationList {

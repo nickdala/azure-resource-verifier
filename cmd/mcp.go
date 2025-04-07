@@ -33,4 +33,8 @@ func mcpCommand(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(mcpCmd)
+
+	mcpCmd.Flags().StringP("log-file", "lf", "", "Path to the log file")
+
+	_ = viper.BindPFlag("log-file", mcpCmd.Flags().Lookup("log-file"))
 }

@@ -1,7 +1,6 @@
 package mcp
 
 import (
-	"context"
 	"fmt"
 	stdlog "log"
 	"os"
@@ -14,7 +13,6 @@ import (
 
 type ResourceVerifierServer struct {
 	cred   *azidentity.DefaultAzureCredential
-	ctx    context.Context
 	logger *stdlog.Logger
 	server *server.MCPServer
 }
@@ -48,14 +46,7 @@ func NewResourceVerifierServer(logFile string) (*ResourceVerifierServer, error) 
 	}
 
 	// Register tool handlers
-	/*s.server.AddTool(mcp.NewTool(
-		"list-locations",
-		mcp.WithDescription("Lists all locations in the Azure subscription"),
-		mcp.WithString("subscription-id",
-			mcp.Description("The Azure subscription ID returned by `az account show`"),
-			mcp.Required(),
-		),
-	), getLocations)*/
+	s.server.AddTool(getLocations(cred, azureSubscriptionId))
 
 	return s, nil
 }
